@@ -1,11 +1,16 @@
-void main() {
-    char *video = (char*) 0xb8000;
+void main()
+{
+    volatile char* video = (volatile char*) 0xb8000;
 
-    char msg[] = "Kernel OK";
+    char msg[] = "Math OS Kernel Result: 5 + 3 = 8";
 
-    for (int i = 0; msg[i] != '\0'; i++) {
-        video[i * 2] = msg[i];
-        video[i * 2 + 1] = 0x07;
+    int i = 0;
+
+    while(msg[i] != '\0')
+    {
+        video[i*2] = msg[i];
+        video[i*2 + 1] = 0x07;
+        i++;
     }
 
     while(1);
