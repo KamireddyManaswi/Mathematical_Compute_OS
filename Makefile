@@ -1,7 +1,7 @@
 CC = gcc
 AS = nasm
 
-CFLAGS = -m32 -ffreestanding -fno-pie -nostdlib -c
+CFLAGS = -m32 -ffreestanding -fno-pie -nostdlib -Os -c
 LDFLAGS = -m elf_i386 -T linker.ld
 
 all:
