@@ -11,10 +11,13 @@ start:
     mov si, boot_msg
     call print_str
 
-    jmp kernel             ; "Load" = jump to kernel code (fits in boot sector)
+    jmp kernel
 
 kernel:
     mov si, kern_msg
+    call print_str
+
+    mov si, fact_msg
     call print_str
 
     ; Math demo: Compute factorial 6 = 720
@@ -24,27 +27,30 @@ fact_loop:
     mul cx                 ; ax *= cx
     loop fact_loop         ; cx--, loop if cx > 0
 
-    ; Print "720 " (digits in ax)
-    mov bx, ax
-    mov ax, '0'
-    mov cx, 3
+    ; Print digits of ax (720)
+    push ax                ; Save result
+print_num:
+    mov bx, 10
+    xor dx, dx
+    div bx                 ; ax /= 10, dx = remainder
+    add dl, '0'
+    mov [digit_buf], dl    ; Store digit
+    push ax
+    test ax, ax
+    jnz print_num
+
+    ; Print digits in reverse (pop stack)
 print_digits:
-    mov si, digit_buf + 2  ; 3-digit buffer
-    sub si, cx
-    mov [si], al
-    dec cx
-    jz print_fact
-    mov dx, 10
-    xor dx, dx             ; Divide bx / 10
-    mov ax, bx
-    div word [ten]
-    mov bx, dx             ; Remainder to bx
-    mov ax, '0'
-    add al, bl
-    jmp print_digits
-print_fact:
+    pop ax
+    test ax, ax
+    jz print_done
     mov si, digit_buf
-    call print_str
+    mov al, [si]
+    mov ah, 0x0E
+    int 0x10
+    jmp print_digits
+print_done:
+    pop ax                 ; Discard saved result
 
     mov si, done_msg
     call print_str
@@ -65,7 +71,7 @@ boot_msg db 'Booting kernel...', 13, 10, 0
 kern_msg db 'Kernel OK', 13, 10, 0
 fact_msg db 'Fact(6)=', 0
 done_msg db ' Math OS ready!', 13, 10, 0
-digit_buf db 0,0,0
+digit_buf db 0
 ten dw 10
 
 times 510-($-$$) db 0
