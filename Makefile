@@ -1,5 +1,4 @@
-AS = nasm
-
+AS=nasm
 all:
 	$(AS) -f bin boot.asm -o boot.bin
 	dd if=/dev/zero of=os.img bs=512 count=2880
