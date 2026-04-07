@@ -2,29 +2,36 @@
 [ORG 0x7C00]
 
 start:
-    mov [BOOT_DRIVE], dl   ; save boot drive
+    ; setup segments
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
 
     ; print B
     mov ah, 0x0E
     mov al, 'B'
     int 0x10
 
-    ; -------- LOAD KERNEL --------
+    ; load kernel at 0x1000:0000
+    mov ax, 0x1000
+    mov es, ax
+    xor bx, bx
+
     mov ah, 0x02
-    mov al, 10
+    mov al, 10          ; load 10 sectors (matches your kernel size)
     mov ch, 0
     mov cl, 2
     mov dh, 0
-    mov dl, [BOOT_DRIVE]   ; ✅ use correct drive
-    mov bx, 0x1000
+    ; IMPORTANT: DO NOT overwrite DL (BIOS sets it)
     int 0x13
 
-    jc disk_error          ; if error → jump
+    jc disk_error
 
-    jmp 0x0000:0x1000
+    ; jump to kernel
+    jmp 0x1000:0000
 
 disk_error:
-    mov si, err_msg
+    mov si, msg
     call print
     jmp $
 
@@ -39,8 +46,7 @@ print:
 .done:
     ret
 
-BOOT_DRIVE db 0
-err_msg db "Disk Error!",0
+msg db "Disk Error!",0
 
 times 510-($-$$) db 0
 dw 0xAA55
