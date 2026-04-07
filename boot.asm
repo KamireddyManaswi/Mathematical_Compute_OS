@@ -6,9 +6,9 @@ start:
     mov al, 'B'
     int 0x10
 
-    ; load kernel (from sector 2)
+    ; load kernel (sector 2 → memory 0x1000)
     mov ah, 0x02
-    mov al, 4          ; number of sectors
+    mov al, 1        ; load 1 sector (very important)
     mov ch, 0
     mov cl, 2
     mov dh, 0
