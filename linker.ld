@@ -1,11 +1,6 @@
-ENTRY(_start)
+ENTRY(main)
 
-SECTIONS
-{
-    . = 1M;
-
-    .text :
-    {
-        *(.text)
-    }
+SECTIONS {
+    . = 0x1000;
+    .text : { *(.text) }
 }

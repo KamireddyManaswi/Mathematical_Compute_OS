@@ -14,7 +14,7 @@ all:
 	dd if=kernel.bin of=os.img bs=512 seek=1 conv=notrunc
 
 run:
-	qemu-system-i386 -drive format=raw,file=os.img
+	qemu-system-i386 -fda os.img
 
 clean:
 	rm -f *.bin *.o *.img
