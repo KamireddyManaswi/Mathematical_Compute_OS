@@ -1,32 +1,14 @@
 void main() {
     char *video = (char*) 0xb8000;
 
-    video[0] = 'K';
-    video[1] = 0x07;
+    char msg[] = "Kernel Working! 5+3=8";
 
-    video[2] = 'e';
-    video[3] = 0x07;
-
-    video[4] = 'r';
-    video[5] = 0x07;
-
-    video[6] = 'n';
-    video[7] = 0x07;
-
-    video[8] = 'e';
-    video[9] = 0x07;
-
-    video[10] = 'l';
-    video[11] = 0x07;
-
-    video[12] = ' ';
-    video[13] = 0x07;
-
-    video[14] = 'O';
-    video[15] = 0x07;
-
-    video[16] = 'K';
-    video[17] = 0x07;
+    int i = 0;
+    while (msg[i]) {
+        video[i*2] = msg[i];
+        video[i*2+1] = 0x07;
+        i++;
+    }
 
     while(1);
 }
