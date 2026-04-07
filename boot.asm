@@ -2,25 +2,33 @@
 [ORG 0x7C00]
 
 start:
+    mov ah, 0x0E          ; BIOS teletype
+    mov al, 'B'
+    int 0x10              ; Print 'B'
 
-    ; BIOS loads bootloader at 0x7C00
-    ; load kernel (next sectors) into memory 0x1000
+    ; Set up segments
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
 
-    mov ah, 0x02      ; BIOS read sector function
-    mov al, 20        ; number of sectors to read
-    mov ch, 0         ; cylinder
-    mov cl, 2         ; sector number (start after boot sector)
-    mov dh, 0         ; head
-    mov dl, 0x00      ; drive (floppy in qemu)
-    mov bx, 0x1000    ; memory location
-    int 0x13          ; call BIOS
+    ; Load kernel (sector 2 → 0x1000:0x0000)
+    mov ah, 0x02          ; Read sectors
+    mov al, 1             ; 1 sector
+    mov ch, 0             ; Cylinder 0
+    mov cl, 2             ; Sector 2
+    mov dh, 0             ; Head 0
+    ; dl already set by BIOS (0 for floppy in QEMU)
+    mov bx, 0x1000        ; ES:BX = 0x1000:0x0000
+    int 0x13
+    jc disk_error         ; Handle error if needed
 
-    ; jump to kernel
-    jmp 0x0000:0x1000
+    jmp 0x0000:0x1000     ; Jump to kernel
 
+disk_error:
+    mov ah, 0x0E
+    mov al, 'E'
+    int 0x10
+    hlt
 
-; fill remaining bytes with 0
 times 510-($-$$) db 0
-
-; boot signature
-dw 0xAA55
+dw 0xAA55               ; Boot signature
