@@ -1,46 +1,32 @@
-void print_string(char *str, char *video, int pos)
-{
-    while(*str)
-    {
-        video[pos*2] = *str;
-        video[pos*2+1] = 0x07;
-
-        str++;
-        pos++;
-    }
-}
-
-
-void main()
-{
+void main() {
     char *video = (char*) 0xb8000;
 
-    print_string("Kernel OK", video, 0);
+    video[0] = 'K';
+    video[1] = 0x07;
 
+    video[2] = 'e';
+    video[3] = 0x07;
 
-    int fact = 1;
-    int n = 5;
+    video[4] = 'r';
+    video[5] = 0x07;
 
-    int i;
+    video[6] = 'n';
+    video[7] = 0x07;
 
-    for(i=2;i<=n;i++)
-        fact *= i;
+    video[8] = 'e';
+    video[9] = 0x07;
 
+    video[10] = 'l';
+    video[11] = 0x07;
 
-    print_string(" Fact(5)=", video, 12);
+    video[12] = ' ';
+    video[13] = 0x07;
 
+    video[14] = 'O';
+    video[15] = 0x07;
 
-    char result = fact + '0';   // 120 simplified demo
-
-    video[26] = '1';
-    video[27] = 0x07;
-
-    video[28] = '2';
-    video[29] = 0x07;
-
-    video[30] = '0';
-    video[31] = 0x07;
-
+    video[16] = 'K';
+    video[17] = 0x07;
 
     while(1);
 }
