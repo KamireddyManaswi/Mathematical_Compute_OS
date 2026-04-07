@@ -2,33 +2,43 @@
 [ORG 0x7C00]
 
 start:
-    mov ah, 0x0E          ; BIOS teletype
-    mov al, 'B'
-    int 0x10              ; Print 'B'
-
-    ; Set up segments
     xor ax, ax
     mov ds, ax
     mov es, ax
 
-    ; Load kernel (sector 2 → 0x1000:0x0000)
-    mov ah, 0x02          ; Read sectors
-    mov al, 1             ; 1 sector
-    mov ch, 0             ; Cylinder 0
-    mov cl, 2             ; Sector 2
-    mov dh, 0             ; Head 0
-    ; dl already set by BIOS (0 for floppy in QEMU)
-    mov bx, 0x1000        ; ES:BX = 0x1000:0x0000
+    mov si, msg_boot
+    call print_string
+
+    ; Load kernel sector 2 to 0x1000
+    mov ah, 0x02
+    mov al, 1
+    mov ch, 0
+    mov cl, 2
+    mov dh, 0
+    mov bx, 0x1000  ; ES:BX
     int 0x13
-    jc disk_error         ; Handle error if needed
+    jc error
 
-    jmp 0x0000:0x1000     ; Jump to kernel
+    jmp 0x1000
 
-disk_error:
-    mov ah, 0x0E
-    mov al, 'E'
-    int 0x10
+error:
+    mov si, msg_err
+    call print_string
     hlt
 
+print_string:
+    mov ah, 0x0E
+.loop:
+    lodsb
+    test al, al
+    jz .done
+    int 0x10
+    jmp .loop
+.done:
+    ret
+
+msg_boot db 'Booting kernel...', 0
+msg_err  db 'Load error!', 0
+
 times 510-($-$$) db 0
-dw 0xAA55               ; Boot signature
+dw 0xAA55
