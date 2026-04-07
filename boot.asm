@@ -7,9 +7,9 @@ start:
     mov al, 'B'
     int 0x10
 
-    ; load kernel (ONLY 1 sector)
-    mov ah, 0x02
-    mov al, 10
+    ; -------- LOAD KERNEL --------
+    mov ah, 0x02      ; BIOS read function
+    mov al, 10        ; number of sectors
     mov ch, 0
     mov cl, 2
     mov dh, 0
