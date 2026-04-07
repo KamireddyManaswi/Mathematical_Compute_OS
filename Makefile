@@ -1,36 +1,20 @@
-# compiler
 CC = gcc
-ASM = nasm
+AS = nasm
 
-# flags
-CFLAGS = -ffreestanding -m32 -c
+CFLAGS = -m32 -ffreestanding -fno-pie -nostdlib -c
 LDFLAGS = -m elf_i386 -T linker.ld
 
-# files
-C_SOURCES = kernel.c
-ASM_SOURCES = boot.asm
-
-OBJECTS = boot.o kernel.o
-
-# default target
-all: os.bin
-
-# compile assembly
-boot.o: boot.asm
-	$(ASM) -f elf32 boot.asm -o boot.o
-
-# compile C
-kernel.o: kernel.c
+all:
+	$(AS) -f bin boot.asm -o boot.bin
 	$(CC) $(CFLAGS) kernel.c -o kernel.o
+	ld $(LDFLAGS) kernel.o -o kernel.bin
 
-# link files
-os.bin: $(OBJECTS)
-	ld $(LDFLAGS) $(OBJECTS) -o os.bin
+	dd if=/dev/zero of=os.img bs=512 count=2880
+	dd if=boot.bin of=os.img conv=notrunc
+	dd if=kernel.bin of=os.img bs=512 seek=1 conv=notrunc
 
-# run OS in qemu
-run: os.bin
-	qemu-system-i386 -kernel os.bin
+run:
+	qemu-system-i386 -drive format=raw,file=os.img
 
-# clean build files
 clean:
-	rm -f *.o *.bin
+	rm -f *.bin *.o *.img
