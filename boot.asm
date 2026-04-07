@@ -2,13 +2,14 @@
 [ORG 0x7C00]
 
 start:
+    ; show bootloader is running
     mov ah, 0x0E
     mov al, 'B'
     int 0x10
 
-    ; Load kernel from disk
+    ; load kernel (from sector 2 onwards)
     mov ah, 0x02
-    mov al, 5
+    mov al, 10        ; number of sectors
     mov ch, 0
     mov cl, 2
     mov dh, 0
@@ -16,6 +17,7 @@ start:
     mov bx, 0x1000
     int 0x13
 
+    ; jump to kernel
     jmp 0x0000:0x1000
 
 times 510-($-$$) db 0
