@@ -1,6 +1,6 @@
 /*
  * Single-purpose "compute node" kernel: no tasks, no syscalls —
- * boots, runs a few pure math routines, prints results to VGA text.
+ * boots, runs basic math routines, prints results to VGA text.
  *
  * Freestanding: no libc. Build with -ffreestanding -nostdlib.
  */
@@ -39,35 +39,15 @@ static void put_u32(int row, int col, uint32_t n, uint8_t color) {
         vga_putc(row, c++, buf[--i], color);
 }
 
-/* Iterative Fibonacci (fits in uint32_t for n <= 46). */
-static uint32_t fib(uint32_t n) {
-    if (n <= 1U)
-        return n;
-    uint32_t a = 0, b = 1;
-    for (uint32_t i = 2; i <= n; i++) {
-        uint32_t t = a + b;
-        a = b;
-        b = t;
+static void put_i32(int row, int col, int32_t n, uint8_t color) {
+    if (n < 0) {
+        vga_putc(row, col++, '-', color);
+        /* avoid overflow on INT32_MIN */
+        uint32_t u = (uint32_t)(-(n + 1)) + 1U;
+        put_u32(row, col, u, color);
+        return;
     }
-    return b;
-}
-
-/* Sum of squares 1^2 + 2^2 + ... + n^2 = n(n+1)(2n+1)/6 */
-static uint32_t sum_squares(uint32_t n) {
-    return n * (n + 1U) * (2U * n + 1U) / 6U;
-}
-
-/* Integer sqrt (Newton), for demo only. */
-static uint32_t isqrt(uint32_t x) {
-    if (x <= 1U)
-        return x;
-    uint32_t r = x;
-    while (1) {
-        uint32_t q = (r + x / r) / 2U;
-        if (q >= r)
-            return r;
-        r = q;
-    }
+    put_u32(row, col, (uint32_t)n, color);
 }
 
 void kernel_main(void) {
@@ -75,14 +55,12 @@ void kernel_main(void) {
     const uint8_t val = 0x2F; /* light green on blue */
 
     vga_puts(0, 0, " Math compute kernel (single-purpose OS demo) ", hdr);
-    vga_puts(2, 0, "fib(24) = ", hdr);
-    put_u32(2, 10, fib(24), val);
 
-    vga_puts(3, 0, "sum_sq(100) = ", hdr);
-    put_u32(3, 14, sum_squares(100), val);
+    vga_puts(2, 0, "add: 123 + 456 = ", hdr);
+    put_u32(2, 19, 123U + 456U, val);
 
-    vga_puts(4, 0, "isqrt(2025) = ", hdr);
-    put_u32(4, 14, isqrt(2025U), val);
+    vga_puts(3, 0, "sub: 100 - 250 = ", hdr);
+    put_i32(3, 19, (int32_t)100 - (int32_t)250, val);
 
     vga_puts(6, 0, "Done. Halted.", hdr);
 }
