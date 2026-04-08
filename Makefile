@@ -1,21 +1,45 @@
-CC = gcc
-AS = nasm
+# i386 Multiboot 1 kernel. Needs: nasm, and a toolchain that can emit 32-bit ELF.
+#
+# Option A (common on OS dev): install i686-elf-gcc / i686-elf-ld and run:
+#   make CROSS_COMPILE=i686-elf-
+#
+# Option B (Linux with multilib): leave CROSS_COMPILE empty and ensure gcc -m32 works:
+#   sudo apt install gcc-multilib  # Debian/Ubuntu
+#   make
+#
+# Run in QEMU:
+#   qemu-system-i386 -kernel kernel.elf
 
-CFLAGS = -m32 -ffreestanding -fno-pie -nostdlib -Os -c
-LDFLAGS = -m elf_i386 -T linker.ld
+CROSS_COMPILE ?=
 
-all:
-	$(AS) -f bin boot.asm -o boot.bin
-	$(CC) $(CFLAGS) kernel.c -o kernel.o
-	ld $(LDFLAGS) -o kernel.elf kernel.o
-	objcopy -O binary kernel.elf kernel.bin
+AS      := nasm
+ASFLAGS := -f elf32
 
-	dd if=/dev/zero of=os.img bs=512 count=2880
-	dd if=boot.bin of=os.img conv=notrunc
-	dd if=kernel.bin of=os.img bs=512 seek=1 conv=notrunc
+CC      := $(CROSS_COMPILE)gcc
+CFLAGS  := -std=c11 -ffreestanding -O2 -Wall -Wextra -nostdlib \
+           -fno-pie -fno-stack-protector -fno-asynchronous-unwind-tables \
+           -m32 -march=i686
 
-run:
-	qemu-system-i386 -fda os.img
+LD      := $(CROSS_COMPILE)ld
+LDFLAGS := -m elf_i386 -nostdlib -T linker.ld
+
+OBJS := boot.o kernel.o
+
+.PHONY: all clean run
+
+all: kernel.elf
+
+boot.o: boot.asm
+	$(AS) $(ASFLAGS) $< -o $@
+
+kernel.o: kernel.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+kernel.elf: $(OBJS) linker.ld
+	$(LD) $(LDFLAGS) $(OBJS) -o $@
 
 clean:
-	rm -f *.bin *.o *.img *.elf
+	rm -f $(OBJS) kernel.elf
+
+run: kernel.elf
+	qemu-system-i386 -kernel kernel.elf
