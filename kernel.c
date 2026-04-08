@@ -1,6 +1,6 @@
 /*
  * Single-purpose "compute node" kernel: no tasks, no syscalls —
- * boots, runs basic math routines, prints results to VGA text.
+ * boots, runs a few pure math routines, prints results to VGA text.
  *
  * Freestanding: no libc. Build with -ffreestanding -nostdlib.
  */
@@ -21,6 +21,14 @@ static void vga_puts(int row, int col, const char *s, uint8_t color) {
     int c = col;
     for (int i = 0; s[i] && c < VGA_WIDTH; i++, c++)
         vga_putc(row, c, s[i], color);
+}
+
+static void vga_clear(uint8_t color) {
+    for (int r = 0; r < VGA_HEIGHT; r++) {
+        for (int c = 0; c < VGA_WIDTH; c++) {
+            vga_putc(r, c, ' ', color);
+        }
+    }
 }
 
 static void put_u32(int row, int col, uint32_t n, uint8_t color) {
@@ -51,16 +59,16 @@ static void put_i32(int row, int col, int32_t n, uint8_t color) {
 }
 
 void kernel_main(void) {
-    const uint8_t hdr = 0x1F; /* white on blue */
-    const uint8_t val = 0x2F; /* light green on blue */
+    const uint8_t plain = 0x07; /* light grey on black */
 
-    vga_puts(0, 0, " Math compute kernel (single-purpose OS demo) ", hdr);
+    vga_clear(plain);
 
-    vga_puts(2, 0, "add: 123 + 456 = ", hdr);
-    put_u32(2, 19, 123U + 456U, val);
+    vga_puts(0, 0, "Math compute kernel (single-purpose OS demo)", plain);
+    vga_puts(2, 0, "add: 123 + 456 = ", plain);
+    put_u32(2, 19, 123U + 456U, plain);
 
-    vga_puts(3, 0, "sub: 100 - 250 = ", hdr);
-    put_i32(3, 19, (int32_t)100 - (int32_t)250, val);
+    vga_puts(3, 0, "sub: 100 - 250 = ", plain);
+    put_i32(3, 19, (int32_t)100 - (int32_t)250, plain);
 
-    vga_puts(6, 0, "Done. Halted.", hdr);
+    vga_puts(6, 0, "Done. Halted.", plain);
 }
