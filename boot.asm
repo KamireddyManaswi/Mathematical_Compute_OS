@@ -1,52 +1,28 @@
-[BITS 16]
-[ORG 0x7C00]
+; Multiboot 1 header + entry for i386 (32-bit).
+; Assemble: nasm -f elf32 boot.asm -o boot.o
 
-start:
-    ; setup segments
-    xor ax, ax
-    mov ds, ax
-    mov es, ax
+global _start
+extern kernel_main
 
-    ; print B
-    mov ah, 0x0E
-    mov al, 'B'
-    int 0x10
+section .multiboot
+align 4
+        dd 0x1BADB002            ; magic
+        dd 0                     ; flags
+        dd -(0x1BADB002 + 0)     ; checksum
 
-    ; load kernel at 0x1000:0000
-    mov ax, 0x1000
-    mov es, ax
-    xor bx, bx
+section .text
+bits 32
 
-    mov ah, 0x02
-    mov al, 10          ; load 10 sectors (matches your kernel size)
-    mov ch, 0
-    mov cl, 2
-    mov dh, 0
-    ; IMPORTANT: DO NOT overwrite DL (BIOS sets it)
-    int 0x13
+_start:
+        cli
+        mov esp, stack_top
+        call kernel_main
+.hang:
+        hlt
+        jmp .hang
 
-    jc disk_error
-
-    ; jump to kernel
-    jmp 0x1000:0000
-
-disk_error:
-    mov si, msg
-    call print
-    jmp $
-
-print:
-    mov ah, 0x0E
-.next:
-    lodsb
-    cmp al, 0
-    je .done
-    int 0x10
-    jmp .next
-.done:
-    ret
-
-msg db "Disk Error!",0
-
-times 510-($-$$) db 0
-dw 0xAA55
+section .bss
+align 16
+stack_bottom:
+        resb 32768
+stack_top:
