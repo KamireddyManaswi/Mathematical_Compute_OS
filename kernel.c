@@ -1,14 +1,88 @@
-void main() {
-    char *video = (char*) 0xb8000;
+/*
+ * Single-purpose "compute node" kernel: no tasks, no syscalls —
+ * boots, runs a few pure math routines, prints results to VGA text.
+ *
+ * Freestanding: no libc. Build with -ffreestanding -nostdlib.
+ */
+#include <stdint.h>
 
-    char msg[] = "Kernel Working! 5+3=8";
+#define VGA_WIDTH  80
+#define VGA_HEIGHT 25
+#define VGA_MEMORY ((volatile uint16_t *)0xB8000)
 
+static void vga_putc(int row, int col, char c, uint8_t color) {
+    if (row < 0 || row >= VGA_HEIGHT || col < 0 || col >= VGA_WIDTH)
+        return;
+    VGA_MEMORY[row * VGA_WIDTH + col] = (uint16_t)(uint8_t)c
+                                        | ((uint16_t)color << 8);
+}
+
+static void vga_puts(int row, int col, const char *s, uint8_t color) {
+    int c = col;
+    for (int i = 0; s[i] && c < VGA_WIDTH; i++, c++)
+        vga_putc(row, c, s[i], color);
+}
+
+static void put_u32(int row, int col, uint32_t n, uint8_t color) {
+    char buf[11];
     int i = 0;
-    while (msg[i]) {
-        video[i*2] = msg[i];
-        video[i*2+1] = 0x07;
-        i++;
+    if (n == 0) {
+        vga_putc(row, col, '0', color);
+        return;
     }
+    while (n > 0 && i < (int)sizeof(buf)) {
+        buf[i++] = (char)('0' + (n % 10U));
+        n /= 10U;
+    }
+    int c = col;
+    while (i > 0 && c < VGA_WIDTH)
+        vga_putc(row, c++, buf[--i], color);
+}
 
-    while(1);
+/* Iterative Fibonacci (fits in uint32_t for n <= 46). */
+static uint32_t fib(uint32_t n) {
+    if (n <= 1U)
+        return n;
+    uint32_t a = 0, b = 1;
+    for (uint32_t i = 2; i <= n; i++) {
+        uint32_t t = a + b;
+        a = b;
+        b = t;
+    }
+    return b;
+}
+
+/* Sum of squares 1^2 + 2^2 + ... + n^2 = n(n+1)(2n+1)/6 */
+static uint32_t sum_squares(uint32_t n) {
+    return n * (n + 1U) * (2U * n + 1U) / 6U;
+}
+
+/* Integer sqrt (Newton), for demo only. */
+static uint32_t isqrt(uint32_t x) {
+    if (x <= 1U)
+        return x;
+    uint32_t r = x;
+    while (1) {
+        uint32_t q = (r + x / r) / 2U;
+        if (q >= r)
+            return r;
+        r = q;
+    }
+}
+
+void kernel_main(void) {
+    const uint8_t hdr = 0x1F; /* white on blue */
+    const uint8_t val = 0x2F; /* light green on blue */
+
+    vga_puts(0, 0, " Math compute kernel (single-purpose OS demo) ", hdr);
+    vga_puts(2, 0, "fib(24) = ", hdr);
+    put_u32(2, 10, fib(24), val);
+
+    vga_puts(3, 0, "sum_sq(100) = ", hdr);
+    put_u32(3, 14, sum_squares(100), val);
+
+    vga_puts(4, 0, "isqrt(2025) = ", hdr);
+    put_u32(4, 14, isqrt(2025U), val);
+
+    vga_puts(6, 0, "Done. Halted.", hdr);
 }
